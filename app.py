@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from database import db
-from flask_login import LoginManager, login_user, current_user
+from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 
 from models.user import User
 
@@ -32,10 +32,16 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.password == password:
             login_user(user)
-            print(current_user.is_authenticated)
             return jsonify({"message": "Login com sucesso"}), 200
 
         return jsonify({"message": "Credenciais inválidas"}), 401
+
+
+@app.route('/logout', methods=['GET'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"message": "Logout com sucesso"}), 200
 
 
 @app.route('/hello-world', methods=['GET'])
