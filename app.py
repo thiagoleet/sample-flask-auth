@@ -1,16 +1,24 @@
 from flask import Flask, request, jsonify
 from database import db
-from loginmanager import login_manager
+from flask_login import LoginManager, login_user, current_user
+
 from models.user import User
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "your_secret_key"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+login_manager = LoginManager()
 
 db.init_app(app=app)
 login_manager.init_app(app=app)
 
 # view login
+login_manager.login_view = 'login'
+
+
+@login_manager.user_loader
+def user_loader(user_id):
+    return User.query.get(user_id)
 
 
 @app.route('/login', methods=['POST'])
@@ -21,9 +29,13 @@ def login():
 
     if username and password:
         # Login
-        return jsonify({"message": "Login com sucesso"}), 200
-    else:
-        return jsonify({"message": "Credenciais inválidas"}), 400
+        user = User.query.filter_by(username=username).first()
+        if user and user.password == password:
+            login_user(user)
+            print(current_user.is_authenticated)
+            return jsonify({"message": "Login com sucesso"}), 200
+
+        return jsonify({"message": "Credenciais inválidas"}), 401
 
 
 @app.route('/hello-world', methods=['GET'])
@@ -32,4 +44,4 @@ def hello_world():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=3000)
